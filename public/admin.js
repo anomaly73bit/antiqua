@@ -1,0 +1,9 @@
+const $=s=>document.querySelector(s);let token='';const base=window.ANTIQUA_CONFIG.apiBase;
+async function api(path,body){if(!base)throw Error('Backend non configurato. La vetrina è ancora in modalità dimostrativa.');const r=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});if(!r.ok)throw Error(r.status===401?'Accesso non autorizzato.':'Operazione non riuscita ('+r.status+'). Verifica formato, diritti e duplicati.');return r.json();}
+function showRows(target,rows){$(target).replaceChildren();if(!rows.length)$(target).textContent='Nessun record.';rows.forEach(row=>{const pre=document.createElement('pre');pre.textContent=JSON.stringify(row,null,2);$(target).append(pre);});}
+async function load(){showRows('#products',await api('/api/admin/products'));}
+$('#login').onsubmit=async e=>{e.preventDefault();token=$('#token').value;$('#token').value='';try{await load();$('#panel').hidden=false;$('#login').hidden=true;$('#status').textContent='Accesso eseguito. Chiave conservata solo in memoria fino all’uscita o alla chiusura della pagina.';}catch(err){token='';$('#status').textContent=err.message;}};
+$('#logout').onclick=()=>{token='';$('#panel').hidden=true;$('#login').hidden=false;$('#products').replaceChildren();$('#enquiries').replaceChildren();$('#records').value='';$('#status').textContent='Disconnesso.';};
+$('#reload').onclick=async()=>{try{await load();}catch(e){$('#status').textContent=e.message;}};
+$('#import').onsubmit=async e=>{e.preventDefault();try{const result=await api('/api/admin/import',JSON.parse($('#records').value));$('#status').textContent=result.imported+' record salvati.';await load();}catch(err){$('#status').textContent=err.message;}};
+$('#leads').onclick=async()=>{try{showRows('#enquiries',await api('/api/admin/enquiries'));}catch(e){$('#status').textContent=e.message;}};
